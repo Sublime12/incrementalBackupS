@@ -86,14 +86,6 @@ class BackupCommand : AbstractCommand
 
         // Console.WriteLine(directoryPath);
         var directoryInfo = new DirectoryInfo(directoryPath);
-        // var directoryEntries = directoryInfo.GetDirectories("*", new EnumerationOptions
-        // {
-        //     // MaxRecursionDepth = depth,
-        //     RecurseSubdirectories = true,
-        //     MatchCasing = MatchCasing.CaseInsensitive,
-        //     MatchType = MatchType.Simple,
-
-        // });
 
         var directoryEntries = directoryInfo.GetDirectories("*", new EnumerationOptions {
             MaxRecursionDepth = depth,
