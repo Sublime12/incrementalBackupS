@@ -1,0 +1,2 @@
+/home/sublime/projects/incrementalBackupS/Cli/Commands/BackupCommand.cs(18,12): warning CS8618: Non-nullable field '_granularityLevel' must contain a non-null value when exiting constructor. Consider declaring the field as nullable. [/home/sublime/projects/incrementalBackupS/incrementalBackupS.csproj]
+/home/sublime/projects/incrementalBackupS/Cli/Commands/BackupCommand.cs(16,25): warning CS0169: The field 'BackupCommand._granularityLevel' is never used [/home/sublime/projects/incrementalBackupS/incrementalBackupS.csproj]
