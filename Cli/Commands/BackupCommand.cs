@@ -2,7 +2,7 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO.Compression;
-
+using System.Text.RegularExpressions;
 
 namespace IncrementalBackupS.Commands;
 
@@ -67,12 +67,12 @@ class BackupCommand : AbstractCommand
             catch (DirectoryNotFoundException e)
             {
                 Console.Error.WriteLine("Directory given not found");
-                Console.Error.WriteLine( $"Complete Trace : {e}");
+                Console.Error.WriteLine($"Complete Trace : {e}");
             }
             catch (IOException e)
             {
                 Console.Error.WriteLine("Directory already exists");
-                Console.Error.WriteLine( $"Complete Trace : {e}");
+                Console.Error.WriteLine($"Complete Trace : {e}");
             }
 
             return;
@@ -87,8 +87,9 @@ class BackupCommand : AbstractCommand
         // Console.WriteLine(directoryPath);
         var directoryInfo = new DirectoryInfo(directoryPath);
 
-        var directoryEntries = directoryInfo.GetDirectories("*", new EnumerationOptions {
-            MaxRecursionDepth = depth,
+        var directoryEntries = directoryInfo.GetDirectories("*", new EnumerationOptions
+        {
+            MaxRecursionDepth = depth - 1,
             RecurseSubdirectories = true,
             AttributesToSkip = default,
         });
@@ -99,33 +100,71 @@ class BackupCommand : AbstractCommand
             directoryInfo.Name
         );
 
-        directoryEntries.ToList().ForEach((directory) => {
-            var relativePath = Path.GetRelativePath(directoryPath, directory.FullName);
+        var backupPath = $"{directoryPath}.backup";
 
-            if (directory.GetDirectories().Count() == 0) {
+        // Create the directory if not exist
+        new DirectoryInfo(backupPath).Create();
+
+        ArchiveRootFiles(directoryInfo.EnumerateFiles().ToList(), backupPath);
+        ArchiveDirectories(directoryPath, directoryEntries, backupPath, depth);
+
+    }
+
+    private void ArchiveDirectories(string directoryPath, DirectoryInfo[] directoryEntries, string backupPath, int depth)
+    {
+        string escapedSeparatorCharacter = Path.DirectorySeparatorChar == '\\' ? "\\\\" : Path.DirectorySeparatorChar.ToString();
+        string pattern = $"^([^{escapedSeparatorCharacter}]+({escapedSeparatorCharacter}[^{escapedSeparatorCharacter}]*){{{depth - 1}}}[^{escapedSeparatorCharacter}]*)$";
+
+
+        directoryEntries.ToList().ForEach((directory) =>
+        {
+            var relativePath = Path.GetRelativePath(directoryPath, $"{directory.FullName}");
+            // Console.WriteLine("Relative path : " + relativePath);
+
+            if (
+                directory.GetDirectories().Count() == 0 ||
+                Regex.IsMatch(
+                    relativePath,
+                    pattern
+                )
+            )
+            {
                 // here compress the directory
+                // Console.WriteLine("V\t==> " + relativePath + " nb dir : " + directory.GetDirectories().Count());
 
-                var backupPath = $"{directoryPath}.backup/{relativePath}.zip";
-                ZipFile.CreateFromDirectory(directoryPath, backupPath);
-            } else {
+
+                ZipFile.CreateFromDirectory(directory.FullName, $"{backupPath}{Path.DirectorySeparatorChar}d_{directory.Name}_{Path.GetRandomFileName()}.zip");
+                // ZipFile.CreateFromDirectory($"{backupPath}_{Path.GetRandomFileName()}", directory.FullName);
+
+            }
+            else
+            {
                 // compress each files in this directory without touching the directories
+                // Console.WriteLine("X\t--> " + relativePath + " nb dir : " + directory.GetDirectories().Count());
 
-                var backupPath = $"{directoryPath}.backup/{relativePath}.zip";
+                var backupDirectoryInfo = new DirectoryInfo(backupPath);
+                backupDirectoryInfo.Create();
 
-                var fileInfo = new FileInfo(backupPath);
-                fileInfo.Directory?.Create();
-
-                using (var fileArchive = ZipFile.Open(backupPath, ZipArchiveMode.Create))
+                using (var fileArchive = ZipFile.Open($"{backupPath}{Path.DirectorySeparatorChar}f_{directory.Name}_{Path.GetRandomFileName()}.zip", ZipArchiveMode.Create))
                 {
-
                     directory.GetFiles().ToList().ForEach(file =>
                     {
-
                         fileArchive.CreateEntryFromFile(file.FullName, file.Name);
+
                     });
                 }
             }
         });
+    }
+
+    private void ArchiveRootFiles(List<FileInfo> files, string backupPath)
+    {
+        using (var rootFilesArchive = ZipFile.Open( $"{backupPath}{Path.DirectorySeparatorChar}rootfiles.zip", ZipArchiveMode.Create))
+        {
+	        files.ToList().ForEach(file => {
+	            rootFilesArchive.CreateEntryFromFile(file.FullName, file.Name);
+	        });
+        }
 
     }
 }
