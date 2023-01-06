@@ -1,11 +1,26 @@
 
+using System.IO.Pipes;
+
 namespace Compresser;
 
 class Compresser
 {
-    public static void compress(Stream file, string output)
+
+    /// <summary>
+    /// Create the stream
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
+    public NamedPipeServerStream CreateNamePipeServer(string name)
     {
-        // output
+        var namePipe = new NamedPipeServerStream(name, PipeDirection.In);
+
+        return namePipe;
+    }
+
+    public void Compress()
+    {
+
     }
 }
 

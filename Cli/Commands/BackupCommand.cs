@@ -112,6 +112,16 @@ class BackupCommand : AbstractCommand
 
     private void ArchiveDirectories(string directoryPath, DirectoryInfo[] directoryEntries, string backupPath, int depth)
     {
+
+        /// <summary>
+        /// This method must return a enumerable of attributes of compressed directories
+        /// Template: {
+        ///     ExternalPath, // The relative path from the files where the (file|directory has been archived)
+        ///     CompressedPath, // The relative path (`the name`) from the backup directory has been ~~stored
+        ///
+        /// }
+        ///
+        /// </summary>
         string escapedSeparatorCharacter = Path.DirectorySeparatorChar == '\\' ? "\\\\" : Path.DirectorySeparatorChar.ToString();
         string pattern = $"^([^{escapedSeparatorCharacter}]+({escapedSeparatorCharacter}[^{escapedSeparatorCharacter}]*){{{depth - 1}}}[^{escapedSeparatorCharacter}]*)$";
 
@@ -142,8 +152,8 @@ class BackupCommand : AbstractCommand
                 // compress each files in this directory without touching the directories
                 // Console.WriteLine("X\t--> " + relativePath + " nb dir : " + directory.GetDirectories().Count());
 
-                var backupDirectoryInfo = new DirectoryInfo(backupPath);
-                backupDirectoryInfo.Create();
+                // var backupDirectoryInfo = new DirectoryInfo(backupPath);
+                // backupDirectoryInfo.Create();
 
                 using (var fileArchive = ZipFile.Open($"{backupPath}{Path.DirectorySeparatorChar}f_{directory.Name}_{Path.GetRandomFileName()}.zip", ZipArchiveMode.Create))
                 {
